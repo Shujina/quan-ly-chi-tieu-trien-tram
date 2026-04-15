@@ -3,66 +3,72 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGJapb8KZCs4
 let transactions = [];
 let myChart;
 
-// HÀM MỞ/ĐÓNG FORM (BẢN VÁ LỖI TREO)
-function toggleForm() {
-    const formElement = document.getElementById('form');
-    if (formElement) {
-        if (formElement.classList.contains('hidden')) {
-            formElement.classList.remove('hidden');
-            formElement.style.display = 'block';
-        } else {
-            formElement.classList.add('hidden');
-            formElement.style.display = 'none';
-        }
-    }
-}
-
-// TẢI DỮ LIỆU TỪ SHEET (CÓ CHỐNG CACHE)
-async function loadTransactionsFromSheet() {
+// 1. ĐỒNG BỘ DỮ LIỆU TỪ SHEET
+async function loadData() {
     const list = document.getElementById('list');
-    list.innerHTML = '<p style="text-align:center; padding:20px;">🔄 Đang đồng bộ...</p>';
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">🔄 Đang tải dữ liệu...</div>';
+    
     try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?t=${new Date().getTime()}`);
         const data = await response.json();
-        transactions = data;
+        // Lọc bỏ dòng trống ngay từ đầu
+        transactions = data.filter(t => t.text && t.amount);
         updateUI();
     } catch (error) {
-        list.innerHTML = '<p style="color:red; text-align:center;">Lỗi tải dữ liệu!</p>';
+        list.innerHTML = '<div style="color:red; text-align:center;">Lỗi kết nối. Hãy tải lại trang!</div>';
     }
 }
 
-// GỬI GIAO DỊCH (BẢN VÁ CHỐNG TREO)
+// 2. GỬI DỮ LIỆU (VỚI FEEDBACK NÚT BẤM)
 document.getElementById('form').addEventListener('submit', function(e) {
     e.preventDefault();
-    
-    const newTransaction = {
-        id: Math.floor(Math.random() * 100000000),
-        text: document.getElementById('text').value,
-        user: document.getElementById('user').value,
+    const btn = document.getElementById('submit-btn');
+    const originalText = btn.innerText;
+
+    const newTx = {
+        id: Date.now(),
+        text: document.getElementById('text').value.trim(),
+        user: document.getElementById('user').value.trim(),
         date: document.getElementById('date').value,
         amount: document.getElementById('type').value === 'expense' ? 
                 -Math.abs(+document.getElementById('amount').value) : 
                  Math.abs(+document.getElementById('amount').value)
     };
 
-    transactions.push(newTransaction);
+    // Hiển thị ngay
+    transactions.push(newTx);
     updateUI();
+
+    // Hiệu ứng nút bấm
+    btn.innerText = "Đang lưu... ⏳";
+    btn.disabled = true;
 
     fetch(GOOGLE_SCRIPT_URL, { 
         method: 'POST', 
         mode: 'no-cors', 
-        body: JSON.stringify(newTransaction) 
+        body: JSON.stringify(newTx) 
+    }).then(() => {
+        btn.innerText = "Thành công! ✅";
+        btn.style.background = "#2ecc71";
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = "";
+            btn.disabled = false;
+            toggleForm();
+        }, 1000);
     });
 
     this.reset();
     document.getElementById('date').valueAsDate = new Date();
-    toggleForm();
 });
 
-// CẬP NHẬT GIAO DIỆN
+// 3. CẬP NHẬT UI (CÓ QUICK STATS)
 function updateUI() {
     const list = document.getElementById('list');
     const balance = document.getElementById('balance');
+    const incDisplay = document.getElementById('total-income');
+    const expDisplay = document.getElementById('total-expense');
+    
     const filter = document.getElementById('timeFilter').value;
     const search = document.getElementById('search').value.toLowerCase();
     const now = new Date();
@@ -75,40 +81,58 @@ function updateUI() {
         return (t.text.toLowerCase().includes(search) || t.user.toLowerCase().includes(search)) && timeMatch;
     });
 
+    // Tính toán thống kê
+    const income = filtered.filter(t => t.amount > 0).reduce((s, t) => s + Number(t.amount), 0);
+    const expense = filtered.filter(t => t.amount < 0).reduce((s, t) => s + Number(t.amount), 0);
+    const total = income + expense;
+
+    balance.innerText = `${total.toLocaleString()}đ`;
+    incDisplay.innerText = `+${income.toLocaleString()}đ`;
+    expDisplay.innerText = `${expense.toLocaleString()}đ`;
+
     list.innerHTML = '';
     filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
         const item = document.createElement('li');
         item.className = t.amount < 0 ? 'minus' : 'plus';
         item.innerHTML = `
-            <div><b>${t.text} (${t.user})</b><br><small>${t.date}</small></div>
+            <div>
+                <b style="font-size:15px;">${t.text}</b>
+                <div style="font-size:12px; color:#64748b;">${t.user} • ${t.date}</div>
+            </div>
             <div style="text-align:right">
-                <p style="color:${t.amount < 0 ? '#ff4757' : '#2ecc71'}"><b>${Number(t.amount).toLocaleString()}đ</b></p>
-                <button class="delete-btn" onclick="removeTransaction(${t.id})">Xóa</button>
+                <p style="font-weight:700; color:${t.amount < 0 ? '#ff4757' : '#2ecc71'}">
+                    ${Number(t.amount).toLocaleString()}đ
+                </p>
+                <button class="delete-btn" onclick="removeTx(${t.id})">Xóa</button>
             </div>`;
         list.appendChild(item);
     });
 
-    const total = filtered.reduce((acc, t) => acc + Number(t.amount), 0);
-    balance.innerText = `${total.toLocaleString()}đ`;
-    renderChart(filtered);
+    renderChart(income, Math.abs(expense));
 }
 
-function removeTransaction(id) {
+function toggleForm() {
+    const f = document.getElementById('form');
+    f.classList.toggle('hidden');
+}
+
+function removeTx(id) {
     if(confirm('Xóa trên máy?')) {
         transactions = transactions.filter(t => t.id !== id);
         updateUI();
     }
 }
 
-function renderChart(data) {
+function renderChart(inc, exp) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
-    const income = data.filter(t => t.amount > 0).reduce((s, t) => s + Number(t.amount), 0);
-    const expense = Math.abs(data.filter(t => t.amount < 0).reduce((s, t) => s + Number(t.amount), 0));
     if (myChart) myChart.destroy();
     myChart = new Chart(ctx, {
         type: 'doughnut',
-        data: { labels: ['Thu nhập', 'Chi tiêu'], datasets: [{ data: [income, expense], backgroundColor: ['#2ecc71', '#ff4757'], borderWidth: 0 }] },
-        options: { cutout: '75%', plugins: { legend: { position: 'bottom' } } }
+        data: {
+            labels: ['Thu', 'Chi'],
+            datasets: [{ data: [inc, exp], backgroundColor: ['#2ecc71', '#ff4757'], borderWidth: 0 }]
+        },
+        options: { cutout: '80%', plugins: { legend: { display: false } } }
     });
 }
 
@@ -117,9 +141,9 @@ function exportToCSV() {
     transactions.forEach(t => csv += `${t.text},${t.user},${t.date},${t.amount}\n`);
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    link.download = "BaoCao.csv";
+    link.download = `BaoCao_TaiChinh.csv`;
     link.click();
 }
 
 document.getElementById('date').valueAsDate = new Date();
-loadTransactionsFromSheet();
+loadData();
