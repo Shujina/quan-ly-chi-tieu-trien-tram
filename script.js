@@ -2,73 +2,74 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGJapb8KZCs4
 
 let transactions = [];
 let myChart;
+const SAVING_GOAL = 10000000; // Đặt mục tiêu 10 triệu (bạn có thể sửa số này)
 
-// 1. ĐỒNG BỘ DỮ LIỆU TỪ SHEET
+// 1. ICON VÀ MÀU SẮC TỰ ĐỘNG
+const getStyle = (text) => {
+    const t = text.toLowerCase();
+    if(t.includes('ăn') || t.includes('uống') || t.includes('cafe') || t.includes('cơm')) return { i: '🍕', b: '#ffedd5' };
+    if(t.includes('lương') || t.includes('thưởng')) return { i: '💰', b: '#dcfce7' };
+    if(t.includes('xe') || t.includes('xăng') || t.includes('grab')) return { i: '🚲', b: '#e0e7ff' };
+    if(t.includes('nhà') || t.includes('điện') || t.includes('nước')) return { i: '🏠', b: '#fef9c3' };
+    if(t.includes('mua') || t.includes('shopee')) return { i: '🛍️', b: '#fce7f3' };
+    return { i: '💸', b: '#f1f5f9' };
+};
+
+// 2. TẢI DỮ LIỆU
 async function loadData() {
     const list = document.getElementById('list');
-    list.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">🔄 Đang tải dữ liệu...</div>';
-    
+    list.innerHTML = '<p style="text-align:center; padding:20px; color:#94a3b8;">🔄 Đang lấy dữ liệu từ mây...</p>';
     try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?t=${new Date().getTime()}`);
-        const data = await response.json();
-        // Lọc bỏ dòng trống ngay từ đầu
+        const res = await fetch(`${GOOGLE_SCRIPT_URL}?t=${Date.now()}`);
+        const data = await res.json();
         transactions = data.filter(t => t.text && t.amount);
         updateUI();
-    } catch (error) {
-        list.innerHTML = '<div style="color:red; text-align:center;">Lỗi kết nối. Hãy tải lại trang!</div>';
+    } catch (e) {
+        list.innerHTML = '<p style="text-align:center; color:red;">Lỗi kết nối. Hãy vuốt xuống tải lại!</p>';
     }
 }
 
-// 2. GỬI DỮ LIỆU (VỚI FEEDBACK NÚT BẤM)
+// 3. GỬI DỮ LIỆU CHỐNG TREO
 document.getElementById('form').addEventListener('submit', function(e) {
     e.preventDefault();
     const btn = document.getElementById('submit-btn');
     const originalText = btn.innerText;
 
-    const newTx = {
+    const tx = {
         id: Date.now(),
-        text: document.getElementById('text').value.trim(),
-        user: document.getElementById('user').value.trim(),
+        text: document.getElementById('text').value,
+        user: document.getElementById('user').value,
         date: document.getElementById('date').value,
         amount: document.getElementById('type').value === 'expense' ? 
                 -Math.abs(+document.getElementById('amount').value) : 
                  Math.abs(+document.getElementById('amount').value)
     };
 
-    // Hiển thị ngay
-    transactions.push(newTx);
+    transactions.push(tx);
     updateUI();
 
-    // Hiệu ứng nút bấm
     btn.innerText = "Đang lưu... ⏳";
     btn.disabled = true;
 
-    fetch(GOOGLE_SCRIPT_URL, { 
-        method: 'POST', 
-        mode: 'no-cors', 
-        body: JSON.stringify(newTx) 
-    }).then(() => {
+    fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(tx) })
+    .then(() => {
         btn.innerText = "Thành công! ✅";
-        btn.style.background = "#2ecc71";
+        btn.style.background = "#10b981";
         setTimeout(() => {
             btn.innerText = originalText;
             btn.style.background = "";
             btn.disabled = false;
             toggleForm();
-        }, 1000);
+        }, 800);
     });
 
     this.reset();
     document.getElementById('date').valueAsDate = new Date();
 });
 
-// 3. CẬP NHẬT UI (CÓ QUICK STATS)
+// 4. CẬP NHẬT UI & HIỆU ỨNG NHẢY SỐ
 function updateUI() {
     const list = document.getElementById('list');
-    const balance = document.getElementById('balance');
-    const incDisplay = document.getElementById('total-income');
-    const expDisplay = document.getElementById('total-expense');
-    
     const filter = document.getElementById('timeFilter').value;
     const search = document.getElementById('search').value.toLowerCase();
     const now = new Date();
@@ -77,50 +78,64 @@ function updateUI() {
         const tDate = new Date(t.date);
         let timeMatch = true;
         if (filter === 'today') timeMatch = tDate.toDateString() === now.toDateString();
-        if (filter === 'month') timeMatch = tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+        if (filter === 'month') timeMatch = tDate.getMonth() === now.getMonth();
         return (t.text.toLowerCase().includes(search) || t.user.toLowerCase().includes(search)) && timeMatch;
     });
 
-    // Tính toán thống kê
     const income = filtered.filter(t => t.amount > 0).reduce((s, t) => s + Number(t.amount), 0);
     const expense = filtered.filter(t => t.amount < 0).reduce((s, t) => s + Number(t.amount), 0);
     const total = income + expense;
 
-    balance.innerText = `${total.toLocaleString()}đ`;
-    incDisplay.innerText = `+${income.toLocaleString()}đ`;
-    expDisplay.innerText = `${expense.toLocaleString()}đ`;
+    // Nhảy số
+    animateValue("balance", total);
+    document.getElementById('total-income').innerText = `+${income.toLocaleString()}đ`;
+    document.getElementById('total-expense').innerText = `${expense.toLocaleString()}đ`;
+    document.getElementById('chart-center-val').innerText = `${Math.abs(expense).toLocaleString()}đ`;
+
+    // Cập nhật Saving Goal
+    const percent = Math.min(Math.round((total / SAVING_GOAL) * 100), 100);
+    document.getElementById('goal-bar').style.width = (percent > 0 ? percent : 0) + '%';
+    document.getElementById('goal-percent').innerText = (percent > 0 ? percent : 0) + '%';
 
     list.innerHTML = '';
     filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
-        const item = document.createElement('li');
-        item.className = t.amount < 0 ? 'minus' : 'plus';
-        item.innerHTML = `
-            <div>
-                <b style="font-size:15px;">${t.text}</b>
-                <div style="font-size:12px; color:#64748b;">${t.user} • ${t.date}</div>
+        const s = getStyle(t.text);
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <div style="display:flex; align-items:center;">
+                <div class="category-icon" style="background:${s.b}">${s.i}</div>
+                <div class="tx-info"><b>${t.text}</b><small>${t.user} • ${t.date}</small></div>
             </div>
-            <div style="text-align:right">
-                <p style="font-weight:700; color:${t.amount < 0 ? '#ff4757' : '#2ecc71'}">
-                    ${Number(t.amount).toLocaleString()}đ
-                </p>
+            <div class="tx-amount">
+                <p style="color:${t.amount < 0 ? 'var(--danger)':'var(--success)'}">${Number(t.amount).toLocaleString()}đ</p>
                 <button class="delete-btn" onclick="removeTx(${t.id})">Xóa</button>
             </div>`;
-        list.appendChild(item);
+        list.appendChild(li);
     });
-
     renderChart(income, Math.abs(expense));
+}
+
+function animateValue(id, end) {
+    const obj = document.getElementById(id);
+    let start = parseInt(obj.innerText.replace(/\D/g,'')) || 0;
+    if (isNaN(start)) start = 0;
+    const duration = 500;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const val = Math.floor(progress * (end - start) + start);
+        obj.innerText = val.toLocaleString() + "đ";
+        if (progress < 1) window.requestAnimationFrame(step);
+    };
+    window.requestAnimationFrame(step);
 }
 
 function toggleForm() {
     const f = document.getElementById('form');
+    const btn = document.getElementById('main-toggle-btn');
     f.classList.toggle('hidden');
-}
-
-function removeTx(id) {
-    if(confirm('Xóa trên máy?')) {
-        transactions = transactions.filter(t => t.id !== id);
-        updateUI();
-    }
+    btn.innerText = f.classList.contains('hidden') ? "+ Thêm giao dịch" : "Đóng lại";
 }
 
 function renderChart(inc, exp) {
@@ -129,19 +144,20 @@ function renderChart(inc, exp) {
     myChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Thu', 'Chi'],
-            datasets: [{ data: [inc, exp], backgroundColor: ['#2ecc71', '#ff4757'], borderWidth: 0 }]
+            datasets: [{ data: [inc, exp], backgroundColor: ['#10b981', '#fb7185'], borderWidth: 0, hoverOffset: 4 }]
         },
-        options: { cutout: '80%', plugins: { legend: { display: false } } }
+        options: { cutout: '85%', plugins: { legend: { display: false } } }
     });
 }
+
+function removeTx(id) { if(confirm('Xóa trên máy?')) { transactions = transactions.filter(t => t.id !== id); updateUI(); } }
 
 function exportToCSV() {
     let csv = "\uFEFFTên,Người chi,Ngày,Số tiền\n";
     transactions.forEach(t => csv += `${t.text},${t.user},${t.date},${t.amount}\n`);
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    link.download = `BaoCao_TaiChinh.csv`;
+    link.download = `BaoCao_${new Date().toLocaleDateString()}.csv`;
     link.click();
 }
 

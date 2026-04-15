@@ -3,59 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Pro</title>
+    <title>Finance Pro v2.0</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h2 class="app-title">Quản Lý Tài Chính</h2>
+            <div class="top-nav">
+                <h2 class="app-title">Ví Gia Đình</h2>
+                <button class="btn-csv" onclick="exportToCSV()">📤 Xuất file</button>
+            </div>
             
             <div class="balance-card">
-                <p>Số dư hiện tại</p>
+                <p class="label">Số dư hiện tại</p>
                 <h1 id="balance">0đ</h1>
                 <div class="quick-stats">
                     <div class="stat-item">
                         <small>Thu nhập</small>
-                        <p id="total-income" style="color: #afffcf">+0đ</p>
+                        <p id="total-income" class="inc-text">+0đ</p>
                     </div>
                     <div class="stat-divider"></div>
                     <div class="stat-item">
                         <small>Chi tiêu</small>
-                        <p id="total-expense" style="color: #ffb1b1">-0đ</p>
+                        <p id="total-expense" class="exp-text">-0đ</p>
+                    </div>
+                </div>
+                <div class="saving-goal">
+                    <div class="goal-info">
+                        <span>Mục tiêu tiết kiệm</span>
+                        <span id="goal-percent">0%</span>
+                    </div>
+                    <div class="progress-bg">
+                        <div id="goal-bar" class="progress-fill"></div>
                     </div>
                 </div>
             </div>
         </header>
 
         <div class="controls">
-            <input type="text" id="search" placeholder="Tìm kiếm..." onkeyup="updateUI()">
+            <input type="text" id="search" placeholder="Tìm tên, người chi..." onkeyup="updateUI()">
             <select id="timeFilter" onchange="updateUI()">
-                <option value="all">Tất cả</option>
-                <option value="today">Hôm nay</option>
                 <option value="month">Tháng này</option>
+                <option value="today">Hôm nay</option>
+                <option value="all">Tất cả</option>
             </select>
         </div>
 
         <div class="chart-container">
             <canvas id="expenseChart"></canvas>
+            <div class="chart-center">
+                <small>Tổng chi</small>
+                <b id="chart-center-val">0đ</b>
+            </div>
         </div>
 
         <div class="history-section">
-            <div class="section-header">
-                <h3>Lịch sử</h3>
-                <button class="btn-csv" onclick="exportToCSV()">Xuất file</button>
-            </div>
+            <h3>Lịch sử giao dịch</h3>
             <ul id="list" class="list"></ul>
         </div>
 
         <div class="add-section">
-            <button class="btn-toggle" onclick="toggleForm()">+ Thêm giao dịch mới</button>
+            <button class="btn-toggle" onclick="toggleForm()" id="main-toggle-btn">+ Thêm giao dịch</button>
             <form id="form" class="hidden">
                 <div class="input-row">
-                    <input type="text" id="text" placeholder="Tên (VD: Cafe...)" required>
-                    <input type="text" id="user" placeholder="Người chi" required>
+                    <input type="text" id="text" placeholder="Ghi chú (Ăn sáng, Lương...)" required>
+                    <input type="text" id="user" placeholder="Ai chi/thu?" required>
                 </div>
                 <div class="input-row">
                     <input type="date" id="date" required>
@@ -65,7 +78,7 @@
                     </select>
                 </div>
                 <input type="number" id="amount" inputmode="numeric" placeholder="Số tiền (VND)" required>
-                <button type="submit" id="submit-btn" class="btn-primary">Xác nhận</button>
+                <button type="submit" id="submit-btn" class="btn-primary">Xác nhận giao dịch</button>
             </form>
         </div>
     </div>
