@@ -19,12 +19,11 @@
 
         <div class="controls">
             <div class="search-box">
-                <input type="text" id="search" placeholder="Tìm kiếm giao dịch..." onkeyup="updateUI()">
+                <input type="text" id="search" placeholder="Tìm kiếm..." onkeyup="updateUI()">
             </div>
             <select id="timeFilter" onchange="updateUI()">
                 <option value="all">Tất cả</option>
                 <option value="today">Hôm nay</option>
-                <option value="week">Tuần này</option>
                 <option value="month">Tháng này</option>
             </select>
         </div>
@@ -45,7 +44,7 @@
             <button class="btn-toggle-form" onclick="toggleForm()">+ Thêm giao dịch</button>
             <form id="form" class="hidden">
                 <div class="input-group">
-                    <input type="text" id="text" placeholder="Tên giao dịch (Ăn sáng, Lương...)" required>
+                    <input type="text" id="text" placeholder="Tên (Ăn sáng...)" required>
                     <input type="text" id="user" placeholder="Người chi" required>
                 </div>
                 <div class="input-group">
@@ -55,7 +54,7 @@
                         <option value="income">Thu nhập (+)</option>
                     </select>
                 </div>
-                <input type="number" id="amount" placeholder="Số tiền (VND)" required>
+                <input type="number" id="amount" placeholder="Số tiền" required>
                 <button type="submit" class="btn-submit">Xác nhận</button>
             </form>
         </div>
