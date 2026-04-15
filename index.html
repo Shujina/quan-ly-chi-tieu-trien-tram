@@ -3,56 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Tài Chính Pro</title>
+    <title>Finance Master Pro</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
-        <h2>📊 Quản Lý Tài Chính</h2>
-        
-        <div class="balance-container">
-            <h4>Số dư hiện tại</h4>
-            <h1 id="balance">0đ</h1>
-        </div>
+        <header>
+            <h2>Quản Lý Tài Chính</h2>
+            <div class="balance-card">
+                <p>Số dư hiện tại</p>
+                <h1 id="balance">0đ</h1>
+            </div>
+        </header>
 
         <div class="controls">
+            <div class="search-box">
+                <input type="text" id="search" placeholder="Tìm kiếm giao dịch..." onkeyup="updateUI()">
+            </div>
             <select id="timeFilter" onchange="updateUI()">
-                <option value="all">Tất cả thời gian</option>
+                <option value="all">Tất cả</option>
                 <option value="today">Hôm nay</option>
                 <option value="week">Tuần này</option>
                 <option value="month">Tháng này</option>
             </select>
-            <input type="text" id="search" placeholder="🔍 Tìm tên, người chi, ngày..." onkeyup="updateUI()">
         </div>
 
-        <div class="chart-wrapper">
+        <div class="chart-section">
             <canvas id="expenseChart"></canvas>
         </div>
 
-        <div class="history">
-            <h3>Lịch sử giao dịch</h3>
+        <div class="history-section">
+            <div class="section-header">
+                <h3>Lịch sử</h3>
+                <button class="btn-export-small" onclick="exportToCSV()">Xuất CSV</button>
+            </div>
             <ul id="list" class="list"></ul>
         </div>
 
-        <div class="add-transaction">
-            <h3>Thêm giao dịch mới</h3>
-            <form id="form">
-                <div class="form-group">
+        <div class="add-section">
+            <button class="btn-toggle-form" onclick="toggleForm()">+ Thêm giao dịch</button>
+            <form id="form" class="hidden">
+                <div class="input-group">
                     <input type="text" id="text" placeholder="Tên giao dịch (Ăn sáng, Lương...)" required>
-                    <input type="text" id="user" placeholder="Người chi tiêu (Vợ, Chồng...)" required>
+                    <input type="text" id="user" placeholder="Người chi" required>
                 </div>
-                <div class="form-group">
+                <div class="input-group">
                     <input type="date" id="date" required>
                     <select id="type">
                         <option value="expense">Chi tiêu (-)</option>
                         <option value="income">Thu nhập (+)</option>
                     </select>
                 </div>
-                <input type="number" id="amount" placeholder="Số tiền (VND)..." required>
-                <button class="btn-add">Thêm giao dịch</button>
+                <input type="number" id="amount" placeholder="Số tiền (VND)" required>
+                <button type="submit" class="btn-submit">Xác nhận</button>
             </form>
-            <button class="btn-export" onclick="exportToCSV()">📤 Xuất file Excel (CSV)</button>
         </div>
     </div>
     <script src="script.js"></script>
