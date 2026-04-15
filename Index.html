@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Master Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2>Quản Lý Tài Chính</h2>
+            <div class="balance-card">
+                <p>Số dư hiện tại</p>
+                <h1 id="balance">0đ</h1>
+            </div>
+        </header>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="search" placeholder="Tìm kiếm giao dịch..." onkeyup="updateUI()">
+            </div>
+            <select id="timeFilter" onchange="updateUI()">
+                <option value="all">Tất cả</option>
+                <option value="today">Hôm nay</option>
+                <option value="week">Tuần này</option>
+                <option value="month">Tháng này</option>
+            </select>
+        </div>
+
+        <div class="chart-section">
+            <canvas id="expenseChart"></canvas>
+        </div>
+
+        <div class="history-section">
+            <div class="section-header">
+                <h3>Lịch sử</h3>
+                <button class="btn-export-small" onclick="exportToCSV()">Xuất CSV</button>
+            </div>
+            <ul id="list" class="list"></ul>
+        </div>
+
+        <div class="add-section">
+            <button class="btn-toggle-form" onclick="toggleForm()">+ Thêm giao dịch</button>
+            <form id="form" class="hidden">
+                <div class="input-group">
+                    <input type="text" id="text" placeholder="Tên giao dịch (Ăn sáng, Lương...)" required>
+                    <input type="text" id="user" placeholder="Người chi" required>
+                </div>
+                <div class="input-group">
+                    <input type="date" id="date" required>
+                    <select id="type">
+                        <option value="expense">Chi tiêu (-)</option>
+                        <option value="income">Thu nhập (+)</option>
+                    </select>
+                </div>
+                <input type="number" id="amount" placeholder="Số tiền (VND)" required>
+                <button type="submit" class="btn-submit">Xác nhận</button>
+            </form>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
