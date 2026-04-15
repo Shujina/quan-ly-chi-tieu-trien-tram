@@ -3,78 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Infinity</title>
+    <title>Finance Master QC</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
-        <header class="dashboard">
-            <div class="dash-header">
-                <span class="version-tag">Infinity Edition</span>
-                <button class="btn-action" onclick="exportToCSV()">📤 Xuất file</button>
+        <header class="card-main">
+            <div class="badge-row">
+                <span class="tag">Master Edition</span>
+                <button onclick="exportToCSV()" class="btn-sub">Xuất CSV</button>
             </div>
-            
-            <div class="balance-section">
-                <small>Tổng số dư hiện tại</small>
+            <div class="balance-container">
+                <small>Số dư khả dụng</small>
                 <h1 id="balance">0đ</h1>
             </div>
-
-            <div class="stats-grid">
-                <div class="stat-item income">
-                    <small>Tổng Thu</small>
-                    <p id="total-income">+0đ</p>
-                </div>
-                <div class="stat-item expense">
-                    <small>Tổng Chi</small>
-                    <p id="total-expense">-0đ</p>
-                </div>
+            <div class="stats">
+                <div class="stat-box">Thu: <b id="total-income" style="color:#4ade80">+0đ</b></div>
+                <div class="stat-box">Chi: <b id="total-expense" style="color:#fb7185">-0đ</b></div>
             </div>
-
-            <div class="goal-box">
-                <div class="goal-text">
-                    <span>Mục tiêu tiết kiệm</span>
-                    <b id="goal-percent">0%</b>
-                </div>
-                <div class="progress-track"><div id="goal-bar" class="progress-fill"></div></div>
+            <div class="progress-container">
+                <div class="progress-text">Mục tiêu: <b id="goal-percent">0%</b></div>
+                <div class="bar-bg"><div id="goal-bar" class="bar-fill"></div></div>
             </div>
         </header>
 
-        <section class="analysis-section">
-            <h3>Phân tích chi tiêu</h3>
-            <div class="chart-container">
+        <section class="section-chart">
+            <div class="chart-relative">
                 <canvas id="expenseChart"></canvas>
-                <div class="chart-inner">
+                <div class="chart-center">
                     <b id="chart-center-val">0đ</b>
                     <small>Tổng chi</small>
                 </div>
             </div>
-            <div id="chart-legend" class="legend-grid"></div>
+            <div id="chart-legend" class="legend-list"></div>
         </section>
 
-        <div id="user-filters" class="chips-bar"></div>
-        
-        <div class="search-bar">
-            <input type="text" id="search" placeholder="Tìm tên giao dịch..." onkeyup="updateUI()">
+        <div id="user-filters" class="filter-scroll"></div>
+        <div class="search-row">
+            <input type="text" id="search" placeholder="Tìm giao dịch..." onkeyup="updateUI()">
             <select id="timeFilter" onchange="updateUI()">
                 <option value="month">Tháng này</option>
                 <option value="all">Tất cả</option>
             </select>
         </div>
 
-        <main class="history-section">
-            <div id="budget-alert" class="budget-alert">⚠️ Cảnh báo: Đã vượt hạn mức chi tiêu tháng!</div>
-            <ul id="list" class="tx-list"></ul>
+        <main class="history">
+            <div id="budget-alert" class="alert-red">⚠️ Bạn đã tiêu quá hạn mức tháng!</div>
+            <ul id="list"></ul>
         </main>
 
-        <button class="fab-btn" onclick="toggleForm()" id="fab">+</button>
+        <button class="fab" id="fab-btn" onclick="toggleForm()">+</button>
+
         <div id="overlay" class="overlay hidden">
-            <form id="form" class="bottom-sheet">
+            <div class="bottom-sheet">
                 <div class="sheet-header">
-                    <h2>Giao dịch mới</h2>
-                    <button type="button" onclick="toggleForm()">✖</button>
+                    <h3>Thêm giao dịch</h3>
+                    <button onclick="toggleForm()" class="btn-close">×</button>
                 </div>
-                <div class="form-grid">
-                    <input type="text" id="text" placeholder="Ghi chú (Ví dụ: Ăn sáng)" required>
-                    <input type="text" id="user" placeholder="Tên người chi" required>
-                    <input type="date" id="date" required
+                <form id="form">
+                    <div class="row">
+                        <input type="text" id="text" placeholder="Ghi chú" required>
+                        <input type="text" id="user" placeholder="Người chi" required>
+                    </div>
+                    <div class="row">
+                        <input type="date" id="date" required>
+                        <select id="type">
+                            <option value="expense">Chi tiêu (-)</option>
+                            <option value="income">Thu nhập (+)</option>
+                        </select>
+                    </div>
+                    <input type="number" id="amount" inputmode="numeric" placeholder="Số tiền (đ)" required>
+                    <button type="submit" id="submit-btn" class="btn-save">Lưu lại</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
